@@ -18,7 +18,7 @@ file "lib/#{NAME}/#{NAME}.so" =>
       sh "make"
     end
   end
-  #cp "ext/#{NAME}/#{NAME}.so", "lib/#{NAME}"
+  cp "ext/#{NAME}/#{NAME}.so", "lib/#{NAME}"
 #end
 
 # make the :test task depend on the shared

@@ -1522,6 +1522,94 @@ static VALUE get_cascade_activation_steepnesses(VALUE self)
     return arr;
 }
 
+static VALUE set_scaling_params(VALUE self, VALUE data, VALUE input_min, VALUE input_max, VALUE output_min, VALUE output_max)
+{
+    struct fann* f;
+    struct fann_train_data* d;
+
+    fann_type new_input_min = NUM2DBL(input_min); 
+    fann_type new_input_max = NUM2DBL(input_max);
+    fann_type new_output_min = NUM2DBL(output_min);
+    fann_type new_output_max = NUM2DBL(output_max);
+
+    Data_Get_Struct (self, struct fann, f);
+    Data_Get_Struct (data, struct fann_train_data, d);
+
+    fann_set_scaling_params(f, d, new_input_min, new_input_max, new_output_min, new_output_max);
+
+    return self;
+}
+
+static VALUE scale_train(VALUE self, VALUE data)
+{
+    struct fann* f;
+    struct fann_train_data* d;
+    Data_Get_Struct (self, struct fann, f);
+    Data_Get_Struct (data, struct fann_train_data, d);
+    fann_scale_train(f, d);
+
+    return self;
+}
+
+static VALUE descale_train(VALUE self, VALUE data)
+{
+    struct fann* f;
+    struct fann_train_data* d;
+    Data_Get_Struct (self, struct fann, f);
+    Data_Get_Struct (data, struct fann_train_data, d);
+    fann_descale_train(f, d);
+
+    return self;
+}
+
+static VALUE scale_input(VALUE self, VALUE input)
+{
+    struct fann* f;
+    VALUE result;
+
+    unsigned int num_input = RARRAY_LEN(input);
+    fann_type data[num_input];
+
+    int i;
+    for (i = 0; i < num_input; i++) {
+        data[i] = NUM2DBL(RARRAY_PTR(input)[i]);
+    }
+
+    Data_Get_Struct (self, struct fann, f);
+    fann_scale_input(f, data);
+
+    result = rb_ary_new();
+    for (i = 0; i < num_input; i++) {
+        rb_ary_push(result, DBL2NUM(data[i]));
+    }
+
+    return result;
+}
+
+static VALUE descale_output(VALUE self, VALUE input)
+{
+    struct fann* f;
+    VALUE result;
+
+    unsigned int num_input = RARRAY_LEN(input);
+    fann_type data[num_input];
+
+    int i;
+    for (i = 0; i < num_input; i++) {
+        data[i] = NUM2DBL(RARRAY_PTR(input)[i]);
+    }
+
+    Data_Get_Struct (self, struct fann, f);
+    fann_descale_output(f, data);
+
+    result = rb_ary_new();
+    for (i = 0; i < num_input; i++) {
+        rb_ary_push(result, DBL2NUM(data[i]));
+    }
+
+    return result;
+}
+
 /** call-seq: save(filename) -> return status
 
     Save the entire network to configuration file with given name */
@@ -1634,6 +1722,11 @@ void Init_ruby_fann ()
     rb_define_method(m_rb_fann_standard_class, "set_cascade_num_candidate_groups", set_cascade_num_candidate_groups, 1);    
     rb_define_method(m_rb_fann_standard_class, "save", nn_save, 1);
 
+    rb_define_method(m_rb_fann_standard_class, "set_scaling_params", set_scaling_params, 5);
+    rb_define_method(m_rb_fann_standard_class, "scale_train", scale_train, 1);
+    rb_define_method(m_rb_fann_standard_class, "descale_train", descale_train, 1);
+    rb_define_method(m_rb_fann_standard_class, "scale_input", scale_input, 1);
+    rb_define_method(m_rb_fann_standard_class, "descale_output", descale_output, 1);
     
     // Uncomment for fixed-point mode (also recompile fann).  Probably not going to be needed:
     //rb_define_method(clazz, "get_decimal_point", get_decimal_point, 0);   
@@ -1732,8 +1825,13 @@ void Init_ruby_fann ()
     rb_define_method(m_rb_fann_shortcut_class, "get_cascade_num_candidate_groups", get_cascade_num_candidate_groups, 0);    
     rb_define_method(m_rb_fann_shortcut_class, "set_cascade_num_candidate_groups", set_cascade_num_candidate_groups, 1);    
     rb_define_method(m_rb_fann_shortcut_class, "save", nn_save, 1);
-    
 
+    rb_define_method(m_rb_fann_shortcut_class, "set_scaling_params", set_scaling_params, 5);
+    rb_define_method(m_rb_fann_shortcut_class, "scale_train", scale_train, 1);
+    rb_define_method(m_rb_fann_shortcut_class, "descale_train", descale_train, 1);
+    rb_define_method(m_rb_fann_shortcut_class, "scale_input", scale_input, 1);
+    rb_define_method(m_rb_fann_shortcut_class, "descale_output", descale_output, 1);
+    
     // TrainData NN class:
     m_rb_fann_train_data_class = rb_define_class_under (m_rb_fann_module, "TrainData", rb_cObject); 
     rb_define_alloc_func (m_rb_fann_train_data_class, fann_training_data_allocate);     

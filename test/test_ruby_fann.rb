@@ -87,6 +87,13 @@ class RubyFannTest < Test::Unit::TestCase
     training = RubyFann::TrainData.new(:filename=>'test/test.train')    
     fann.init_weights(training)
   end
+
+  def test_set_scaling_params
+    fann = RubyFann::Standard.new(:num_inputs=>4, :hidden_neurons=>[3, 4, 3, 4], :num_outputs=>1)
+    training = RubyFann::TrainData.new(:filename=>'test/test.train')    
+    $stderr.puts (fann.methods - Object.methods).inspect
+    fann.set_scaling_params(training, 0, 1, 0, 1)
+  end
   
   
   def test_print_connections
